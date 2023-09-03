@@ -1,11 +1,12 @@
-const app = require('express')();
+const express = require('express');
+const app = express();
 const PORT = process.env.PORT || 3002;
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const signinRoutes = require('./routes/signInRoutes');
 const pool = require('./db/db');
 
-app.use(bodyParser.json());
+app.use(express.json());
 app.use(cors());
 
 app.use('/', signinRoutes);
