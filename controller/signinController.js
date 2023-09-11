@@ -9,6 +9,7 @@ const {
     getUserInfo
  } = require('../db/queries');
 
+ const secretKey = process.env.SECRETKEY;
 
 const signIn = async (req, res) => {
     try {
@@ -38,7 +39,6 @@ const signIn = async (req, res) => {
             role: 'user'
         }
 
-        const secretKey = process.env.SECRETKEY;
         const options = {
             expiresIn: '1hr'
         };
@@ -47,8 +47,8 @@ const signIn = async (req, res) => {
 
         return res.status(200).json({
             message: 'User signed in successfully',
-            token,
-            error: null
+            error: null,
+            token
         });
     } catch (error) {
         console.log('error', error);
@@ -98,4 +98,56 @@ const signUp = async (req, res) => {
     }
 }
 
-module.exports = { signIn, signUp };
+const logOut = (req, res) => {
+    try {
+        res.clearCookie('token');
+        return res.status(200).json({
+            message: 'User loged out successfully',
+            error: null
+        });
+    } catch (error) {
+        console.log('Error', error);
+        return res.status(500).json({
+            message: 'Error while loging out user', 
+            error: 'Internal server error'
+        });
+    }
+}
+
+const validateToken = (req, res) => {
+    try {
+        console.log(req.body);
+        const token = req.body.token;
+        if(!token) {
+            return res.status(401).json({
+                isValid: false,
+                error: 'Token is missing'
+            })
+        }
+
+        const isValid = jwt.verify(token, secretKey);
+        console.log('valid', isValid);
+        
+        if(!isValid) {
+            return res.status(401).json({
+                isValid: false,
+                error: 'Token validation failed'
+            })
+        } 
+
+        return res.status(200).json({
+            isValid: true,
+            error: null
+        });
+        
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            isValid: false,
+            error: 'Internal server error'
+        });
+    }
+}
+
+module.exports = { signIn, signUp, logOut, validateToken };
