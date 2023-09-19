@@ -36,7 +36,7 @@ const signIn = async (req, res) => {
         const payload = {
             id: result.rows[0].customer_id,
             username: result.rows[0].full_name,
-            role: 'user'
+            role: result.rows[0].user_type
         }
 
         const options = {
@@ -48,7 +48,8 @@ const signIn = async (req, res) => {
         return res.status(200).json({
             message: 'User signed in successfully',
             error: null,
-            token
+            token,
+            userType: result.rows[0].user_type
         });
     } catch (error) {
         console.log('error', error);
@@ -62,7 +63,6 @@ const signIn = async (req, res) => {
 const signUp = async (req, res) => {
     try {
         const { email, full_name, password } = req.body;
-        console.log(email, full_name, password);
 
         // check if email already exist in db
         const result = await pool.query(getUserByEmail, [email]);
@@ -82,7 +82,7 @@ const signUp = async (req, res) => {
         const currentDate = new Date();
 
         // create new user
-        await pool.query(createUser, [email, full_name, hashedPassword, currentDate]);
+        await pool.query(createUser, [email, full_name, hashedPassword, currentDate, 'user']);
 
         return res.status(200).json({
             message: 'User created successfully', 
@@ -116,9 +116,7 @@ const logOut = (req, res) => {
 
 const validateToken = (req, res) => {
     try {
-        console.log(req.body);
         const token = req.body.token;
-        console.log(token);
         
         if(!token) {
             return res.status(401).json({
@@ -128,7 +126,6 @@ const validateToken = (req, res) => {
         }
 
         const isValid = jwt.verify(token, secretKey);
-        console.log('valid', isValid);
         
         if(!isValid) {
             return res.status(401).json({
@@ -139,6 +136,7 @@ const validateToken = (req, res) => {
 
         return res.status(200).json({
             isValid: true,
+            role: isValid.role,
             error: null
         });
         
